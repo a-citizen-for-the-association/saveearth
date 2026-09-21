@@ -2,3 +2,6 @@ out/
 cache/
 broadcast/
 .env
+
+# Anvil's local chain id — never a real deployment, just a dry-run artifact
+deployments/31337.json
