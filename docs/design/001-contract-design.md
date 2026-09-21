@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Draft(4章 GovernanceToken.sol の詳細は[ADR-0006](../adr/0006-governance-token.md)のOpen Questions確認待ち)
+- ステータス: Approved
 - 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [ADR-0002](../adr/0002-single-chain-mainnet-strategy.md) [ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md) [ADR-0004](../adr/0004-ownable-governance-model.md) [ADR-0005](../adr/0005-communityboard-references-membership.md) [ADR-0006](../adr/0006-governance-token.md)
 
 ## 1. 概要
@@ -78,15 +78,16 @@ OpenZeppelin `ERC20`をそのまま継承し、独自のstateは持たない。
 
 ```solidity
 contract GovernanceToken is ERC20 {
-    constructor(address initialHolder, uint256 initialSupply) ERC20("<name>", "<symbol>") {
-        _mint(initialHolder, initialSupply);
+    uint256 public constant INITIAL_SUPPLY = 1_000_000_000_000 * 10 ** 18;
+
+    constructor(address initialHolder) ERC20("SaveEarth Governance Token", "SEG") {
+        _mint(initialHolder, INITIAL_SUPPLY);
     }
 }
 ```
 
-- 名称・シンボル: 未確定([要件定義001 8章](../requirements/001-mvp-requirements.md)のOpen Question)。
-- `initialSupply`: 「100,000,000,000」という指示が、人間可読のトークン枚数(`100_000_000_000 * 10**18`を`_mint`)か、ERC20の生の最小単位(`decimals`込みでそのまま`100000000000`を`_mint`、実質0.0000001枚相当)か未確定([ADR-0006](../adr/0006-governance-token.md)参照、Open Question)。
-- `decimals()`はOpenZeppelin `ERC20`のデフォルト実装(18)をオーバーライドせず使用する想定。
+- 名称: `SaveEarth Governance Token`、シンボル: `SEG`。
+- 供給量: 1兆(1,000,000,000,000)トークン(人間可読の枚数)。`decimals`はOpenZeppelin `ERC20`のデフォルト実装(18)をオーバーライドせず使用するため、生の値は`INITIAL_SUPPLY = 1_000_000_000_000 * 10**18`を定数として持つ。
 
 ### 3.2 関数
 
@@ -94,7 +95,7 @@ contract GovernanceToken is ERC20 {
 
 | 関数 | 呼び出し可能者 | 概要 |
 |---|---|---|
-| `constructor(address initialHolder, uint256 initialSupply)` | デプロイ者 | `initialHolder`(Owner)へ`initialSupply`の全量を一度だけミント |
+| `constructor(address initialHolder)` | デプロイ者 | `initialHolder`(Owner)へ`INITIAL_SUPPLY`(1兆トークン)を一度だけミント |
 
 デプロイ後に供給量を変更する手段(追加ミント・バーン権限)は一切実装しない(固定供給、[ADR-0006](../adr/0006-governance-token.md))。
 
@@ -203,7 +204,7 @@ error InvalidGovernanceToken(address governanceTokenAddress);
   - `membershipAddress`/`governanceTokenAddress`にコードを持たないアドレス(EOA・`address(0)`)を渡すとデプロイ時にそれぞれ`InvalidMembership`・`InvalidGovernanceToken`でrevertすること
   - `transferOwnership`後、新Ownerがメンバーでなければ`OwnerNotAMember`でrevertし、メンバーであれば操作できること(セキュリティレビューで指摘)
   - デプロイ直後にOwnerがメンバー#1として登録されていること(要件7.1)
-  - `GovernanceToken`: デプロイ直後に`initialHolder`の残高が`initialSupply`と一致すること、総供給量が`initialSupply`と一致すること、ミント関数が存在しないこと(標準`ERC20`のテストで十分カバーされる)
+  - `GovernanceToken`: デプロイ直後に`initialHolder`の残高が`INITIAL_SUPPLY`(1兆トークン)と一致すること、`totalSupply()`が`INITIAL_SUPPLY`と一致すること、名称・シンボルが`SaveEarth Governance Token`/`SEG`であること
 - 本番デプロイ前に、Anvilだけでなく実際のTestnet(Sepolia / Polkadot Hub Testnet)に対しても動作確認を行う([ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md)の注記事項)。
 - `forge coverage`の100%要件は`src/`配下のコントラクトを対象とする。`script/Deploy.s.sol`はデプロイスクリプトであり、実際のデプロイ(dry-run含む)で動作確認するものであってユニットテスト対象ではないため、`--no-match-coverage "script/"`で除外して集計する。
 
@@ -211,6 +212,3 @@ error InvalidGovernanceToken(address governanceTokenAddress);
 
 - [ ] チャットルーム/メッセージの登録数に上限を設けるか(4.4のガスコスト対策)
 - [ ] `label`/`content`/`url`の文字数上限(ストレージコスト・UI表示崩れ防止のため設定を推奨)
-- [ ] GovernanceTokenの名称・シンボル([要件定義001 8章](../requirements/001-mvp-requirements.md))
-- [ ] GovernanceTokenのミント数量「100,000,000,000」の単位([要件定義001 8章](../requirements/001-mvp-requirements.md) / [ADR-0006](../adr/0006-governance-token.md))
-- [ ] GovernanceTokenを固定供給・`Ownable`なしとする方針([ADR-0006](../adr/0006-governance-token.md))で確定してよいか

@@ -1,7 +1,7 @@
 # 0006. ガバナンストークン(ERC20)の導入とCommunityBoardへの不変参照
 
 - 日付: 2026-09-21
-- ステータス: Proposed(実装前に要件定義001の8章のOpen Questions 3件の確認が必要)
+- ステータス: Accepted
 
 ## コンテキスト
 
@@ -14,14 +14,16 @@
 ### 1. 新規コントラクト `GovernanceToken.sol`
 
 - OpenZeppelin `ERC20`(5.7.0)を継承する標準的なERC20トークンとする。
-- コンストラクタで供給量の全量を指定アドレス(Owner)に一度だけミントし、**それ以外にミント関数を一切持たない(固定供給)**。`Ownable`も継承しない — デプロイ後、誰も追加ミント・供給量変更を行えないようにする。
-- 名称・シンボル・供給量の具体的な数値は要件定義8章のOpen Questionとして確認中。
+- 名称: `SaveEarth Governance Token`、シンボル: `SEG`、`decimals`はOpenZeppelンのデフォルト(18)をそのまま使う。
+- 供給量は **1兆(1,000,000,000,000)トークン**(人間可読の枚数。`decimals=18`を考慮すると生の値は`1_000_000_000_000 * 10**18`)を、コンストラクタで指定アドレス(Owner)に一度だけミントする。
+- **それ以外にミント関数を一切持たない(固定供給)**。`Ownable`も継承しない — デプロイ後、誰も追加ミント・供給量変更を行えないようにする。
 
 ```solidity
-// イメージ(名称・シンボル・供給量は確認後に確定)
 contract GovernanceToken is ERC20 {
-    constructor(address initialHolder, uint256 initialSupply) ERC20("SaveEarth Governance Token", "TBD") {
-        _mint(initialHolder, initialSupply);
+    uint256 public constant INITIAL_SUPPLY = 1_000_000_000_000 * 10 ** 18;
+
+    constructor(address initialHolder) ERC20("SaveEarth Governance Token", "SEG") {
+        _mint(initialHolder, INITIAL_SUPPLY);
     }
 }
 ```
@@ -78,8 +80,8 @@ constructor(address initialOwner, address membershipAddress, address governanceT
 - フロントエンドは`CommunityBoard.governanceToken()`を読み取り、ガバナンストークンのコントラクトアドレスを表示する(画面サンプルは別途提示)。
 - 供給量の全量が単一のアドレス(Owner)に集中する。将来のDAO化時にどう分配するかは別途検討が必要(今回のスコープ外)。
 
-## オープン事項(要件定義001の8章と重複記載)
+## 決定事項(2026-09-21確認済み)
 
-- [ ] トークン名・シンボル
-- [ ] ミント数量「100,000,000,000」が人間可読の枚数か、ERC20の生の最小単位かの確認
-- [ ] (このADRの提案通り)固定供給・`Ownable`なしで進めてよいか
+- 名称・シンボル: `SaveEarth Governance Token` / `SEG`
+- 供給量: 1兆(1,000,000,000,000)トークン(人間可読の枚数として)
+- 固定供給・`Ownable`なし(追加ミント不可)で確定

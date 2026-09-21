@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Draft(ガバナンストークン表示[ADR-0006]を追加、画面サンプル確認待ち。それ以外は実装完了、8章参照)
+- ステータス: Approved(ガバナンストークン表示[ADR-0006]の画面サンプルも承認済み。残るオープン事項は8章参照)
 - 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [コントラクト基本設計書 001](./001-contract-design.md) / [SaveEarth Home Screen(デザイン案)](https://claude.ai/code/artifact/6a37909a-6a4d-406e-a9d7-85808cf5b47e)
 
 ## 1. 概要
