@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Approved(初期実装完了。残るオープン事項は8章参照)
+- ステータス: Draft(ガバナンストークン表示[ADR-0006]を追加、画面サンプル確認待ち。それ以外は実装完了、8章参照)
 - 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [コントラクト基本設計書 001](./001-contract-design.md) / [SaveEarth Home Screen(デザイン案)](https://claude.ai/code/artifact/6a37909a-6a4d-406e-a9d7-85808cf5b47e)
 
 ## 1. 概要
@@ -41,6 +41,7 @@ app/
 2. MISSION LOG: 理念・目標メッセージの一覧(複数)。Ownerかつメンバーである間のみ追加・削除フォームを表示(ADR-0005)。Ownerだがメンバーでない場合はその旨を表示する
 3. COMMS CHANNELS: チャットルームURLの一覧(複数)。Ownerかつメンバーである間のみ追加・削除フォームを表示(ADR-0005)。Ownerだがメンバーでない場合はその旨を表示する
 4. PARTY ROSTER: メンバー一覧(アドレス・追加者・件数)。メンバー時のみ「新規メンバー追加」フォーム、本人の行にのみ「脱退」ボタンを表示
+5. **GOVERNANCE TOKEN**([ADR-0006](../adr/0006-governance-token.md)、要件4.6): `CommunityBoard.governanceToken()`から取得した公式ガバナンストークンのコントラクトアドレスを表示する。読み取り専用(誰でも閲覧可能)、編集フォームはない。画面サンプルは本設計書に別途添付のモックアップを参照
 
 ## 4. コンポーネント構成
 
@@ -56,10 +57,12 @@ components/
 ├── comms/
 │   ├── CommsChannelList.tsx
 │   └── CommsChannelForm.tsx   # Owner かつ メンバー専用(ADR-0005)
-└── membership/
-    ├── PartyRoster.tsx
-    ├── AddMemberForm.tsx      # メンバー専用
-    └── LeaveButton.tsx        # 本人のみ
+├── membership/
+│   ├── PartyRoster.tsx
+│   ├── AddMemberForm.tsx      # メンバー専用
+│   └── LeaveButton.tsx        # 本人のみ
+└── token/
+    └── GovernanceTokenPanel.tsx   # 読み取り専用、誰でも閲覧可(ADR-0006)
 ```
 
 `Owner専用`/`メンバー専用`のコンポーネントは、対応する権限を持たないアカウントの場合はそもそもレンダリングしない(操作できないボタンをグレー表示するのではなく、非表示にする)。ただし「Ownerではあるがメンバーでない」場合に限っては、単に非表示にするのではなく理由を短く表示する(`hooks/useMembershipStatus.ts`の`canManageCommunityBoard`)。
@@ -83,6 +86,7 @@ lib/
 ```
 
 - チェーンごとのコントラクトアドレスは環境変数(`NEXT_PUBLIC_MEMBERSHIP_ADDRESS_<chainId>`等)で注入する。Next.jsは`process.env.NEXT_PUBLIC_*`をビルド時に静的置換するため、動的なキー組み立て(`process.env[computed]`)ではなく、チェーンごとに固定のプロパティアクセスを列挙する必要がある(`lib/contracts/membership.ts`参照)。未設定チェーンでは機能を無効化し、「未デプロイ」の表示にする。
+- **ガバナンストークンのアドレスは環境変数を別途持たない**。`CommunityBoard.governanceToken()`をオンチェーンから直接読み取って表示する(`lib/contracts/communityBoard.ts`のABIに`governanceToken`ゲッターを追加)。CommunityBoardのアドレスさえ分かればガバナンストークンのアドレスも導出できるため、フロントエンド側で二重に設定を持たない([ADR-0006](../adr/0006-governance-token.md))。
 - Polkadot Hub(mainnet/testnet)はwagmiの`defineChain`でカスタムチェーン定義を追加する。RPC/Chain ID/ネイティブ通貨はdocs.polkadot.comで確認済み(Testnet: `420420417`/`PAS`、Mainnet: `420420419`/`DOT`。[003-software-versions.md](./003-software-versions.md)参照)。
 - `getActiveChatRooms`/`getActiveMessages`はコントラクト側でid情報を含めずactive要素だけを返すため、削除ボタンに必要な本当のオンチェーンidをそこから復元できない。フロントエンドでは代わりに`chatRoomCount`/`messageCount`から`0..count-1`の範囲で`getChatRoom(i)`/`getMessage(i)`を`useReadContracts`によるマルチコールでまとめて取得し、idを保持したまま`active`でフィルタする(`hooks/useActiveEntries.ts`)。
 
