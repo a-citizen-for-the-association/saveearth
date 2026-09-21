@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
+import { headers } from "next/headers";
+import { cookieToInitialState } from "wagmi";
+import { wagmiConfig } from "../lib/wagmi";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -20,11 +23,16 @@ export const metadata: Metadata = {
   description: "Address-only membership, chat rooms, and mission log for the SaveEarth association.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Rehydrates wagmi's persisted connection state from the request's own
+  // cookie header, so the server render already matches whatever the
+  // client will settle on — see the `ssr`/`storage` note in lib/wagmi.ts.
+  const initialState = cookieToInitialState(wagmiConfig, (await headers()).get("cookie"));
+
   return (
     <html lang="en" className={`${pressStart2P.variable} ${vt323.variable}`}>
       <body>
-        <Providers>{children}</Providers>
+        <Providers initialState={initialState}>{children}</Providers>
       </body>
     </html>
   );

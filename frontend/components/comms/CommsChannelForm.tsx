@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useWriteContract } from "wagmi";
+import { useConfirmedWrite } from "../../hooks/useConfirmedWrite";
 import { useSaveEarthContracts } from "../../hooks/useSaveEarthContracts";
 import { communityBoardAbi } from "../../lib/contracts/communityBoard";
 import sharedStyles from "../shared.module.css";
@@ -10,14 +10,10 @@ export function CommsChannelForm({ onSuccess }: { onSuccess: () => void }) {
   const { chainId, communityBoard } = useSaveEarthContracts();
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
-  const { writeContract, isPending, error } = useWriteContract({
-    mutation: {
-      onSuccess: () => {
-        setLabel("");
-        setUrl("");
-        onSuccess();
-      },
-    },
+  const { writeContract, isBusy, error } = useConfirmedWrite(() => {
+    setLabel("");
+    setUrl("");
+    onSuccess();
   });
 
   return (
@@ -49,8 +45,8 @@ export function CommsChannelForm({ onSuccess }: { onSuccess: () => void }) {
         value={url}
         onChange={(event) => setUrl(event.target.value)}
       />
-      <button type="submit" className={sharedStyles.btn} disabled={isPending || !label.trim() || !url.trim()}>
-        {isPending ? "…" : "ADD"}
+      <button type="submit" className={sharedStyles.btn} disabled={isBusy || !label.trim() || !url.trim()}>
+        {isBusy ? "…" : "ADD"}
       </button>
       {error && <p className={sharedStyles.errorText}>{error.message}</p>}
     </form>

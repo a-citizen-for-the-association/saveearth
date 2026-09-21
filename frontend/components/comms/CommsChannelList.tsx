@@ -1,7 +1,7 @@
 "use client";
 
-import { useWriteContract } from "wagmi";
 import { useActiveEntries } from "../../hooks/useActiveEntries";
+import { useConfirmedWrite } from "../../hooks/useConfirmedWrite";
 import { useMembershipStatus } from "../../hooks/useMembershipStatus";
 import { useSaveEarthContracts } from "../../hooks/useSaveEarthContracts";
 import { communityBoardAbi } from "../../lib/contracts/communityBoard";
@@ -22,11 +22,9 @@ export function CommsChannelList() {
     "getChatRoom",
   );
 
-  const { writeContract, isPending } = useWriteContract({
-    mutation: { onSuccess: () => refetch() },
-  });
+  const { writeContract, isBusy } = useConfirmedWrite(refetch);
 
-  if (!isConfigured) {
+  if (!isConfigured || !communityBoard) {
     return (
       <div className={sharedStyles.panel}>
         <p className={sharedStyles.heading}>COMMS CHANNELS</p>
@@ -49,10 +47,10 @@ export function CommsChannelList() {
               <button
                 type="button"
                 className={sharedStyles.btn}
-                disabled={isPending}
+                disabled={isBusy}
                 onClick={() =>
                   writeContract({
-                    address: communityBoard!,
+                    address: communityBoard,
                     abi: communityBoardAbi,
                     functionName: "removeChatRoom",
                     args: [BigInt(id)],

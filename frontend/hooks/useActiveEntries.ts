@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Abi } from "viem";
+import type { Abi, ContractFunctionName } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 import { useSaveEarthContracts } from "./useSaveEarthContracts";
 
@@ -12,18 +12,30 @@ import { useSaveEarthContracts } from "./useSaveEarthContracts";
  * `getEntry(i)` for every `i` in `[0, count)` via a single multicall and
  * keeps the id alongside each result, filtering to `active` client-side.
  * Counts are small and owner-curated (design doc 001 section 3.4).
+ *
+ * `TAbi` is threaded through so `countFunctionName`/`entryFunctionName` are
+ * checked against the actual ABI's view functions at compile time, instead
+ * of accepting any string.
  */
-export function useActiveEntries<T extends { active: boolean }>(
+export function useActiveEntries<T extends { active: boolean }, TAbi extends Abi = Abi>(
   address: `0x${string}` | undefined,
-  abi: Abi,
-  countFunctionName: string,
-  entryFunctionName: string,
+  abi: TAbi,
+  countFunctionName: ContractFunctionName<TAbi, "pure" | "view">,
+  entryFunctionName: ContractFunctionName<TAbi, "pure" | "view">,
 ) {
   const { chainId, isConfigured } = useSaveEarthContracts();
 
+  // Widened back to the base `Abi` for these two calls: mixing a 0-arg
+  // (count) and a 1-arg (entry-by-id) function under one generic `TAbi`
+  // defeats wagmi/viem's per-function arg-shape inference. The public
+  // signature above already checks `countFunctionName`/`entryFunctionName`
+  // against the real ABI, which is what actually catches a typo'd name —
+  // that guarantee doesn't depend on these internal calls staying generic.
+  const genericAbi = abi as Abi;
+
   const countQuery = useReadContract({
     address,
-    abi,
+    abi: genericAbi,
     functionName: countFunctionName,
     chainId,
     query: { enabled: isConfigured },
@@ -35,12 +47,12 @@ export function useActiveEntries<T extends { active: boolean }>(
     () =>
       Array.from({ length: count }, (_, id) => ({
         address,
-        abi,
+        abi: genericAbi,
         functionName: entryFunctionName,
         args: [BigInt(id)],
         chainId,
       })),
-    [address, abi, entryFunctionName, chainId, count],
+    [address, genericAbi, entryFunctionName, chainId, count],
   );
 
   const entriesQuery = useReadContracts({

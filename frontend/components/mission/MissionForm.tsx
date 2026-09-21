@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useWriteContract } from "wagmi";
+import { useConfirmedWrite } from "../../hooks/useConfirmedWrite";
 import { useSaveEarthContracts } from "../../hooks/useSaveEarthContracts";
 import { communityBoardAbi } from "../../lib/contracts/communityBoard";
 import sharedStyles from "../shared.module.css";
@@ -9,13 +9,9 @@ import sharedStyles from "../shared.module.css";
 export function MissionForm({ onSuccess }: { onSuccess: () => void }) {
   const { chainId, communityBoard } = useSaveEarthContracts();
   const [content, setContent] = useState("");
-  const { writeContract, isPending, error } = useWriteContract({
-    mutation: {
-      onSuccess: () => {
-        setContent("");
-        onSuccess();
-      },
-    },
+  const { writeContract, isBusy, error } = useConfirmedWrite(() => {
+    setContent("");
+    onSuccess();
   });
 
   return (
@@ -40,8 +36,8 @@ export function MissionForm({ onSuccess }: { onSuccess: () => void }) {
         value={content}
         onChange={(event) => setContent(event.target.value)}
       />
-      <button type="submit" className={sharedStyles.btn} disabled={isPending || !content.trim()}>
-        {isPending ? "…" : "ADD"}
+      <button type="submit" className={sharedStyles.btn} disabled={isBusy || !content.trim()}>
+        {isBusy ? "…" : "ADD"}
       </button>
       {error && <p className={sharedStyles.errorText}>{error.message}</p>}
     </form>

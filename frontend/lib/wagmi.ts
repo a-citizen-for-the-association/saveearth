@@ -1,6 +1,6 @@
 import { defineChain } from "viem";
 import { mainnet, sepolia } from "viem/chains";
-import { createConfig, http, injected } from "wagmi";
+import { cookieStorage, createConfig, createStorage, http, injected } from "wagmi";
 
 // Chain IDs / RPC / currency confirmed against docs.polkadot.com
 // (smart-contracts/connect) on 2026-09-21. REVM backend per ADR-0003.
@@ -36,6 +36,13 @@ export type SupportedChainId = (typeof supportedChains)[number]["id"];
 export const wagmiConfig = createConfig({
   chains: supportedChains,
   connectors: [injected()],
+  // `ssr: true` + cookie storage keeps the server's first render and the
+  // client's first render identical (both start "disconnected"); the real
+  // persisted connection is rehydrated after mount instead of racing ahead
+  // of React's hydration pass, which would otherwise mismatch for a
+  // returning user with a previously-connected wallet.
+  ssr: true,
+  storage: createStorage({ storage: cookieStorage }),
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
