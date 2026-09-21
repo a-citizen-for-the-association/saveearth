@@ -23,7 +23,11 @@ const STRANGER = "?e2eConnector=2";
 test("golden path 1: an unconnected visitor can browse the home screen read-only", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByText("SAVEEARTH")).toBeVisible();
+  // Exact match: a case-insensitive substring search for "SAVEEARTH" would
+  // also match "SaveEarth Governance Token" and the discord.gg/saveearth
+  // URL text once those panels render, causing an intermittent strict-mode
+  // violation depending on render timing.
+  await expect(page.getByText("SAVEEARTH", { exact: true })).toBeVisible();
   await expect(page.getByText("MISSION LOG")).toBeVisible();
   await expect(page.getByText("Climate action starts with us.")).toBeVisible();
   await expect(page.getByText("COMMS CHANNELS")).toBeVisible();
