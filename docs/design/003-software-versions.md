@@ -18,6 +18,15 @@
 
 Foundry自体はPolkadot Hub(EVM/REVM)向けのチェーン設定(`--chain polkadot` 等)を組み込みでサポートしている([ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md))。
 
+### 1.1 コントラクトのLint/フォーマット
+
+| 用途 | 採用 | 備考 |
+|---|---|---|
+| フォーマッター | **`forge fmt`**(Foundry組み込み) | 追加の依存を増やさない。`foundry.toml`の`[fmt]`で設定 |
+| リンター | **`forge lint`**(Foundry v1.7.0以降に組み込み) | `forge build`実行時にデフォルトで動く。CIでは`--deny warnings`を付けて警告もエラー扱いにする |
+
+外部ツール(`solhint`等)は導入しない。Foundry組み込み機能で要件を満たせるため、依存を増やさない方針とする。
+
 ## 2. フロントエンド側
 
 | ソフトウェア | 採用予定バージョン | 状態 | 備考 |
@@ -30,6 +39,10 @@ Foundry自体はPolkadot Hub(EVM/REVM)向けのチェーン設定(`--chain polka
 | wagmi | **3.7.x** | Stable | React用Web3フック。v2からv3への移行ガイドが公式に存在 |
 | viem | **2.56.x** | Stable | wagmiの下層ライブラリ(RPC/ABIエンコード) |
 | TanStack Query | wagmiの要求バージョンに追従(v5系) | Stable | wagmiに内蔵、個別インストール不要 |
+| ESLint | **10.5.x** | Stable | v9系は2026-08にEOL。`eslint-config-next`(16.3.x、採用中のNext.jsと同一バージョン)を利用 |
+| Prettier | **3.9.x** | Stable | フォーマッター。ecc web/hooks.mdのPostToolUseフック(`prettier --write`)にそのまま利用する |
+
+フロントエンドのLint/フォーマットは、Solidity側(Foundry組み込み)とは異なり、実績があり広く使われているESLint + Prettierの組み合わせを採用する。新しい統合ツール(Biome等)は本プロジェクトでは採用しない(`software-policy`の「実績のある広く使われているものを優先する」方針)。
 
 ## 3. 導入前に確認すべき事項
 
