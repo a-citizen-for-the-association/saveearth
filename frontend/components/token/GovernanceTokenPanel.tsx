@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useGovernanceToken } from "../../hooks/useGovernanceToken";
 import { truncateAddress } from "../../lib/format";
+import { CopyButton } from "../CopyButton";
 import sharedStyles from "../shared.module.css";
 import styles from "./GovernanceTokenPanel.module.css";
 
 export function GovernanceTokenPanel() {
   const { address, name, symbol, explorerUrl, isConfigured } = useGovernanceToken();
-  const [copied, setCopied] = useState(false);
 
   if (!isConfigured) {
     return (
@@ -37,17 +36,7 @@ export function GovernanceTokenPanel() {
       </div>
       <div className={styles.addressRow}>
         <span className={styles.address}>{truncateAddress(address)}</span>
-        <button
-          type="button"
-          className={sharedStyles.btn}
-          onClick={async () => {
-            await navigator.clipboard.writeText(address);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          }}
-        >
-          {copied ? "COPIED" : "COPY"}
-        </button>
+        <CopyButton value={address} />
       </div>
       {explorerUrl && (
         <p className={styles.explorer}>
