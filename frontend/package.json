@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,css,json}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,css,json}\" --ignore-path .gitignore",
     "test": "vitest run",

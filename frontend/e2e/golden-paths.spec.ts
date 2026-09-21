@@ -58,7 +58,9 @@ test("golden path 3: an existing member adds a new member unilaterally", async (
 
   await page.goto(`/${SECOND_MEMBER}`);
   await page.getByRole("button", { name: "CONNECT WALLET" }).click();
-  await expect(page.getByText("MEMBER")).toBeVisible();
+  // Exact match: a substring search for "MEMBER" also matches the static
+  // footer text "PRESS ADD TO RECRUIT A NEW MEMBER".
+  await expect(page.getByText("MEMBER", { exact: true })).toBeVisible();
 
   await page.getByPlaceholder("0x... ADDRESS").fill(newMember);
   await page.getByRole("button", { name: "ADD" }).click();
