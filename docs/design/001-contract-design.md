@@ -4,7 +4,7 @@
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
 - ステータス: Approved
-- 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [ADR-0002](../adr/0002-single-chain-mainnet-strategy.md) [ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md) [ADR-0004](../adr/0004-ownable-governance-model.md)
+- 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [ADR-0002](../adr/0002-single-chain-mainnet-strategy.md) [ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md) [ADR-0004](../adr/0004-ownable-governance-model.md) [ADR-0005](../adr/0005-communityboard-references-membership.md)
 
 ## 1. 概要
 
@@ -13,9 +13,11 @@
 | コントラクト | 責務 |
 |---|---|
 | `Membership.sol` | メンバーの追加・削除・追加者の記録 |
-| `CommunityBoard.sol` | チャットルームURLの登録、理念・目標メッセージの登録 |
+| `CommunityBoard.sol` | チャットルームURLの登録、理念・目標メッセージの登録。`Membership`を不変参照する([ADR-0005](../adr/0005-communityboard-references-membership.md)) |
 
-両方とも OpenZeppelin `Ownable`(5.x系、要実装時に最新安定版を確認)を継承し、非アップグレード(プロキシなし)とする([ADR-0004](../adr/0004-ownable-governance-model.md))。デプロイ時に同一のOwnerアドレス(EOA、将来はマルチシグ)を両コントラクトに設定する。
+両方とも OpenZeppelin `Ownable`(5.7.0)を継承し、非アップグレード(プロキシなし)とする([ADR-0004](../adr/0004-ownable-governance-model.md))。デプロイ時に同一のOwnerアドレス(EOA、将来はマルチシグ)を両コントラクトに設定する。
+
+`CommunityBoard`は`Membership`のコントラクトアドレスをコンストラクタで受け取り`immutable`で保持する(依存の方向は一方向、`Membership`は`CommunityBoard`の存在を一切知らない)。デプロイ順序は **① `Membership` → ② `CommunityBoard`(①のアドレスを渡す)** に固定される([ADR-0005](../adr/0005-communityboard-references-membership.md))。
 
 ## 2. Membership.sol
 
@@ -68,6 +70,12 @@ event MemberRemoved(address indexed member, address indexed removedBy);
 チャットルームとメッセージは同型の「登録・論理削除できるリスト」なので、同じ構造で2種類管理する。配列の物理削除(swap-and-pop)はID/インデックスがずれてフロントエンドの参照を壊すため、**論理削除(activeフラグ)** を採用する。
 
 ```solidity
+interface IMembership {
+    function isMember(address account) external view returns (bool);
+}
+
+IMembership public immutable membership;   // コンストラクタで設定、変更不可(ADR-0005)
+
 struct ChatRoom {
     string label;
     string url;
@@ -86,16 +94,21 @@ mapping(uint256 => Message) private messages;
 uint256 public messageCount;
 ```
 
+`Membership`の実装全体をimportせず、`isMember`のみを持つ最小限のインターフェース(`IMembership`)経由で参照する(コントラクトサイズを抑え、依存を最小化するため)。
+
 ### 3.2 関数
 
 | 関数 | 呼び出し可能者 | 概要 |
 |---|---|---|
-| `addChatRoom(string label, string url) returns (uint256 id)` | Owner | 複数登録可能(要件4.4) |
-| `removeChatRoom(uint256 id)` | Owner | `active = false` にする論理削除 |
-| `addMessage(string content) returns (uint256 id)` | Owner | 複数登録可能(要件4.5) |
-| `removeMessage(uint256 id)` | Owner | 論理削除 |
+| `constructor(address initialOwner, address membershipAddress)` | デプロイ者 | `membership`を設定(ADR-0005)。`membershipAddress`にコードを持たないアドレス(EOA・`address(0)`等)を渡すと`InvalidMembership`でrevertする(誤ったアドレスでのデプロイをその場で検知するため。正しいMembership実装であることまでは保証しない) |
+| `addChatRoom(string label, string url) returns (uint256 id)` | Owner **かつ** `membership`上で現在もメンバーであること | 複数登録可能(要件4.4)。Ownerがメンバーでなくなっている場合は`OwnerNotAMember`でrevert |
+| `removeChatRoom(uint256 id)` | 同上 | `active = false` にする論理削除 |
+| `addMessage(string content) returns (uint256 id)` | 同上 | 複数登録可能(要件4.5) |
+| `removeMessage(uint256 id)` | 同上 | 論理削除 |
 | `getActiveChatRooms() view returns (ChatRoom[] memory)` | 誰でも | フロントエンド表示用のヘルパー(3.4参照) |
 | `getActiveMessages() view returns (Message[] memory)` | 誰でも | 同上 |
+
+「Ownerかつメンバー」の判定は、OpenZeppelin `Ownable`の`_checkOwner()`(Owner以外は`OwnableUnauthorizedAccount`でrevert)を先に呼び、続けて`membership.isMember(msg.sender)`を確認する専用モディファイア`onlyOwnerWhoIsMember`として実装する。
 
 ### 3.3 イベント
 
@@ -104,6 +117,9 @@ event ChatRoomAdded(uint256 indexed id, string label, string url);
 event ChatRoomRemoved(uint256 indexed id);
 event MessageAdded(uint256 indexed id, string content);
 event MessageRemoved(uint256 indexed id);
+
+error OwnerNotAMember(address owner);
+error InvalidMembership(address membershipAddress);
 ```
 
 ### 3.4 [設計メモ] 一覧取得のガスコスト
@@ -114,8 +130,8 @@ event MessageRemoved(uint256 indexed id);
 
 | ロール | Membership | CommunityBoard |
 |---|---|---|
-| Owner | メンバーである間は追加可(2.4)、任意メンバーの削除可 | チャットルーム/メッセージの追加・削除 |
-| メンバー | 新規メンバーの追加(単独)、自己脱退 | 閲覧のみ |
+| Owner | メンバーである間は追加可(2.4)、任意メンバーの削除可 | メンバーである間のみ、チャットルーム/メッセージの追加・削除(ADR-0005) |
+| メンバー | 新規メンバーの追加(単独)、自己脱退 | 閲覧のみ(Ownerを兼ねる場合を除く) |
 | 誰でも | 閲覧のみ | 閲覧のみ |
 
 ## 5. マルチチェーン対応
@@ -133,6 +149,7 @@ event MessageRemoved(uint256 indexed id);
 - 入力値検証: `addMember`はゼロアドレス・重複登録をrevert、`addChatRoom`/`addMessage`は空文字列の扱いを実装時に決定する(空文字列を許可するか、`require(bytes(x).length > 0)`で弾くか)。
 - Owner権限の乗っ取り対策として、将来のCouncil移行時は `transferOwnership` の宛先をマルチシグ(例: Safe)にすることを強く推奨する([ADR-0004](../adr/0004-ownable-governance-model.md))。
 - **`renounceOwnership()`は両コントラクトともオーバーライドしてrevertさせ、無効化する**(セキュリティレビューで指摘)。非アップグレード契約でOwnerが`address(0)`になると、`CommunityBoard`の全操作が永久に不能になり、`Membership`のOwner経由削除・将来の`transferOwnership`によるCouncil移行経路も塞がれてしまうため。
+- `CommunityBoard`は`Membership`の実装全体をimportせず、最小限のインターフェース(`IMembership`)のみに依存する。依存の方向は一方向(`CommunityBoard → Membership`)で、`Membership`側の変更・不具合が`CommunityBoard`に波及することはあっても逆はない([ADR-0005](../adr/0005-communityboard-references-membership.md))。
 
 ## 7. テスト方針
 
@@ -140,8 +157,12 @@ event MessageRemoved(uint256 indexed id);
   - `addMember`: 非メンバーからの呼び出しがrevertすること、ゼロアドレス・重複登録がrevertすること、正常系でイベントと状態が更新されること
   - `removeMember`: 本人・Owner以外からの呼び出しがrevertすること
   - `addChatRoom`/`addMessage`/削除系: Owner以外からの呼び出しがrevertすること、論理削除後に一覧から除外されること
+  - **Ownerであっても`membership`上でメンバーでなくなっている場合は`OwnerNotAMember`でrevertすること**、メンバーに復帰(他メンバーによる再追加)すれば再び操作できること(ADR-0005)
+  - `membershipAddress`にコードを持たないアドレス(EOA・`address(0)`)を渡すとデプロイ時に`InvalidMembership`でrevertすること
+  - `transferOwnership`後、新Ownerがメンバーでなければ`OwnerNotAMember`でrevertし、メンバーであれば操作できること(セキュリティレビューで指摘)
   - デプロイ直後にOwnerがメンバー#1として登録されていること(要件7.1)
 - 本番デプロイ前に、Anvilだけでなく実際のTestnet(Sepolia / Polkadot Hub Testnet)に対しても動作確認を行う([ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md)の注記事項)。
+- `forge coverage`の100%要件は`src/`配下のコントラクトを対象とする。`script/Deploy.s.sol`はデプロイスクリプトであり、実際のデプロイ(dry-run含む)で動作確認するものであってユニットテスト対象ではないため、`--no-match-coverage "script/"`で除外して集計する。
 
 ## 8. オープン事項
 

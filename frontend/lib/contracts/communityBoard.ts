@@ -18,7 +18,10 @@ export function communityBoardAddress(chainId: number): Address | undefined {
 export const communityBoardAbi = [
   {
     type: "constructor",
-    inputs: [{ name: "initialOwner", type: "address", internalType: "address" }],
+    inputs: [
+      { name: "initialOwner", type: "address", internalType: "address" },
+      { name: "membershipAddress", type: "address", internalType: "address" },
+    ],
     stateMutability: "nonpayable",
   },
   {
@@ -113,6 +116,13 @@ export const communityBoardAbi = [
         ],
       },
     ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "membership",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract IMembership" }],
     stateMutability: "view",
   },
   {
@@ -217,5 +227,10 @@ export const communityBoardAbi = [
     type: "error",
     name: "OwnableUnauthorizedAccount",
     inputs: [{ name: "account", type: "address", internalType: "address" }],
+  },
+  {
+    type: "error",
+    name: "OwnerNotAMember",
+    inputs: [{ name: "owner", type: "address", internalType: "address" }],
   },
 ] as const;

@@ -2,9 +2,14 @@
 pragma solidity 0.8.37;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IMembership } from "./IMembership.sol";
 
 /// @notice Owner-managed lists of chat room links and mission/goal messages.
 ///         Entries are soft-deleted (active flag) so ids stay stable for callers.
+/// @dev References a Membership contract (immutable, one-directional —
+///      Membership knows nothing about CommunityBoard) so that admin actions
+///      require not just holding the Owner key but currently being a member
+///      of the association it manages (ADR-0005).
 contract CommunityBoard is Ownable {
     struct ChatRoom {
         string label;
@@ -16,6 +21,8 @@ contract CommunityBoard is Ownable {
         string content;
         bool active;
     }
+
+    IMembership public immutable membership;
 
     mapping(uint256 => ChatRoom) private chatRooms;
     uint256 public chatRoomCount;
@@ -31,17 +38,42 @@ contract CommunityBoard is Ownable {
     error EmptyValue();
     error NotFound(uint256 id);
     error AlreadyRemoved(uint256 id);
+    error OwnerNotAMember(address owner);
+    error InvalidMembership(address membershipAddress);
 
-    constructor(address initialOwner) Ownable(initialOwner) { }
+    constructor(address initialOwner, address membershipAddress) Ownable(initialOwner) {
+        // Can't verify `membershipAddress` actually implements IMembership
+        // correctly (that's the accepted deploy-time trust boundary,
+        // ADR-0005) — but since `membership` is immutable, catching a
+        // plain wrong-address mistake (EOA, address(0), typo) here turns a
+        // silent brick into an immediate deploy-time revert instead of a
+        // surprise on the first admin call.
+        if (membershipAddress.code.length == 0) revert InvalidMembership(membershipAddress);
+        membership = IMembership(membershipAddress);
+    }
 
-    function addChatRoom(string calldata label, string calldata url) external onlyOwner returns (uint256 id) {
+    /// @dev Owner-only, same as `onlyOwner`, plus: the Owner must currently be
+    ///      a member of `membership`. An Owner who has left the association
+    ///      loses admin rights here until they rejoin or ownership moves to
+    ///      an address that is a member (ADR-0005).
+    modifier onlyOwnerWhoIsMember() {
+        _checkOwner();
+        if (!membership.isMember(msg.sender)) revert OwnerNotAMember(msg.sender);
+        _;
+    }
+
+    function addChatRoom(string calldata label, string calldata url)
+        external
+        onlyOwnerWhoIsMember
+        returns (uint256 id)
+    {
         if (bytes(label).length == 0 || bytes(url).length == 0) revert EmptyValue();
         id = chatRoomCount++;
         chatRooms[id] = ChatRoom({ label: label, url: url, active: true });
         emit ChatRoomAdded(id, label, url);
     }
 
-    function removeChatRoom(uint256 id) external onlyOwner {
+    function removeChatRoom(uint256 id) external onlyOwnerWhoIsMember {
         if (id >= chatRoomCount) revert NotFound(id);
         ChatRoom storage room = chatRooms[id];
         if (!room.active) revert AlreadyRemoved(id);
@@ -49,14 +81,14 @@ contract CommunityBoard is Ownable {
         emit ChatRoomRemoved(id);
     }
 
-    function addMessage(string calldata content) external onlyOwner returns (uint256 id) {
+    function addMessage(string calldata content) external onlyOwnerWhoIsMember returns (uint256 id) {
         if (bytes(content).length == 0) revert EmptyValue();
         id = messageCount++;
         messages[id] = Message({ content: content, active: true });
         emit MessageAdded(id, content);
     }
 
-    function removeMessage(uint256 id) external onlyOwner {
+    function removeMessage(uint256 id) external onlyOwnerWhoIsMember {
         if (id >= messageCount) revert NotFound(id);
         Message storage message = messages[id];
         if (!message.active) revert AlreadyRemoved(id);

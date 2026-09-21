@@ -18,7 +18,9 @@ contract Deploy is Script {
 
         vm.startBroadcast();
         membership = new Membership(owner);
-        board = new CommunityBoard(owner);
+        // CommunityBoard references Membership immutably (ADR-0005), so
+        // Membership must be deployed first.
+        board = new CommunityBoard(owner, address(membership));
         vm.stopBroadcast();
 
         console2.log("Chain ID        :", block.chainid);

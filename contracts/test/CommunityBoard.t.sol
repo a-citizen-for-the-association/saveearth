@@ -4,19 +4,124 @@ pragma solidity 0.8.37;
 import { Test } from "forge-std/Test.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { CommunityBoard } from "../src/CommunityBoard.sol";
+import { Membership } from "../src/Membership.sol";
 
 contract CommunityBoardTest is Test {
+    Membership private membership;
     CommunityBoard private board;
 
     address private owner = makeAddr("owner");
     address private stranger = makeAddr("stranger");
 
     function setUp() public {
-        board = new CommunityBoard(owner);
+        // Membership's constructor registers `owner` as its genesis member,
+        // so `owner` satisfies `onlyOwnerWhoIsMember` (ADR-0005) by default.
+        membership = new Membership(owner);
+        board = new CommunityBoard(owner, address(membership));
     }
 
     function test_constructor_setsOwnable() public view {
         assertEq(board.owner(), owner);
+    }
+
+    function test_constructor_setsMembership() public view {
+        assertEq(address(board.membership()), address(membership));
+    }
+
+    function test_constructor_revertsOnEoaMembershipAddress() public {
+        address eoa = makeAddr("not-a-contract");
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidMembership.selector, eoa));
+        new CommunityBoard(owner, eoa);
+    }
+
+    function test_constructor_revertsOnZeroAddressMembership() public {
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidMembership.selector, address(0)));
+        new CommunityBoard(owner, address(0));
+    }
+
+    function test_addChatRoom_afterTransferOwnershipToNonMemberReverts() public {
+        address newOwner = makeAddr("newOwner");
+        vm.prank(owner);
+        board.transferOwnership(newOwner);
+
+        vm.prank(newOwner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, newOwner));
+        board.addChatRoom("General", "https://discord.gg/saveearth");
+    }
+
+    function test_addChatRoom_afterTransferOwnershipToExistingMemberSucceeds() public {
+        address newOwner = makeAddr("newOwner");
+        vm.prank(owner);
+        membership.addMember(newOwner); // newOwner joins before taking over ownership
+
+        vm.prank(owner);
+        board.transferOwnership(newOwner);
+
+        vm.prank(newOwner);
+        uint256 id = board.addChatRoom("General", "https://discord.gg/saveearth");
+        assertEq(id, 0);
+    }
+
+    function test_addChatRoom_byOwnerWhoLeftMembershipReverts() public {
+        vm.prank(owner);
+        membership.removeMember(owner);
+
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, owner));
+        board.addChatRoom("General", "https://discord.gg/saveearth");
+    }
+
+    function test_addChatRoom_byOwnerWhoRejoinedMembershipSucceedsAgain() public {
+        address alice = makeAddr("alice");
+        vm.prank(owner);
+        membership.addMember(alice); // a second member, so owner leaving doesn't end the association
+
+        vm.prank(owner);
+        membership.removeMember(owner);
+
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, owner));
+        board.addChatRoom("General", "https://discord.gg/saveearth");
+
+        vm.prank(alice);
+        membership.addMember(owner); // alice adds owner back
+
+        vm.prank(owner);
+        uint256 id = board.addChatRoom("General", "https://discord.gg/saveearth");
+        assertEq(id, 0);
+    }
+
+    function test_addMessage_byOwnerWhoLeftMembershipReverts() public {
+        vm.prank(owner);
+        membership.removeMember(owner);
+
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, owner));
+        board.addMessage("Climate action starts with us.");
+    }
+
+    function test_removeChatRoom_byOwnerWhoLeftMembershipReverts() public {
+        vm.prank(owner);
+        uint256 id = board.addChatRoom("General", "https://discord.gg/saveearth");
+
+        vm.prank(owner);
+        membership.removeMember(owner);
+
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, owner));
+        board.removeChatRoom(id);
+    }
+
+    function test_removeMessage_byOwnerWhoLeftMembershipReverts() public {
+        vm.prank(owner);
+        uint256 id = board.addMessage("Climate action starts with us.");
+
+        vm.prank(owner);
+        membership.removeMember(owner);
+
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.OwnerNotAMember.selector, owner));
+        board.removeMessage(id);
     }
 
     function test_renounceOwnership_isDisabled() public {

@@ -16,7 +16,7 @@ cp .env.example .env  # fill in the values you need for the network you're targe
 ```bash
 forge build
 forge test
-forge coverage --report summary   # must stay at 100% line/statement/branch/function (see Definition of Done)
+forge coverage --no-match-coverage "script/" --report summary   # must stay at 100% for src/ (see Definition of Done)
 forge fmt --check
 forge lint
 ```
