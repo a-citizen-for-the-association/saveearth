@@ -1,7 +1,7 @@
 # 003. 採用ソフトウェア バージョン一覧
 
 - 作成日: 2026-09-21
-- 更新日: 2026-09-21
+- 更新日: 2026-09-22
 - 作成者: A Citizen for the Association
 - ステータス: Approved(フロントエンド実装時に確定した内容を反映済み)
 - 関連: [コントラクト基本設計書](./001-contract-design.md) / [フロントエンド基本設計書](./002-frontend-design.md) / [ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md) / [ADR-0004](../adr/0004-ownable-governance-model.md)
@@ -31,7 +31,7 @@ Foundry自体はPolkadot Hub(EVM/REVM)向けのチェーン設定(`--chain polka
 
 | ソフトウェア | 採用予定バージョン | 状態 | 備考 |
 |---|---|---|---|
-| Node.js | **26.x** | Current(LTS昇格は2026-10予定) | 指定によりNode.js 26を採用。2026-09時点ではLTSではなくCurrentであることに留意(3章参照) |
+| Node.js | **24.x** | LTS | [変更](#3-導入時に確認した事項結果)2026-09-22時点、Vercelが対応するNode.jsは24.x/22.x/20.xまでで26.xは未対応と判明したため、当初採用していた26.x(Current)から変更した |
 | パッケージマネージャ | **pnpm 12.5.1** | Stable | 2026-08にTypeScript実装からRust実装への全面書き換え(v12)を実施したばかりのため、導入時にプロジェクトの主要コマンド(install/build)が問題なく動くことを確認すること(3章参照) |
 | Next.js | **16.3.x** | Stable | App Router。Pages Routerは使用しない |
 | React / React DOM | **19.2.x**(Next.js 16.3の要求に合わせる) | Stable | Next.js側のpeer dependencyに従う |
@@ -46,7 +46,8 @@ Foundry自体はPolkadot Hub(EVM/REVM)向けのチェーン設定(`--chain polka
 
 ## 3. 導入時に確認した事項(結果)
 
-- [x] **Node.js 26(Current)**: `nvm install 26`で導入し、`pnpm install`/`pnpm build`とも問題なく動作した。LTSではない点は変わらず留意事項として残す。
+- [x] **Node.js 26(Current)→24(LTS)に変更**: 当初`nvm install 26`で導入し問題なく動作していたが、2026-09-22にVercelへのデプロイを準備した際、Vercelのサポート対象Node.jsが24.x/22.x/20.xまで(26.x非対応)と判明した。ローカル開発・CI・Vercel本番ビルドの環境を揃えるため、`engines.node`・`.nvmrc`ともに24.xへ変更した。
+- [x] **Node.js 24.x**: `nvm install 24`で導入し、`pnpm install`/`pnpm build`/`pnpm typecheck`/`pnpm test:coverage`/`pnpm e2e`とも問題なく動作した。
 - [x] **TypeScript 7.0系の採用可否**: 上表の通り5.9.3を採用(7.0系は見送り)。
 - [x] **pnpm 12.5.1(Rust書き換え版)**: `pnpm install`/`pnpm build`/`pnpm dev`とも問題なく動作した。
 - [x] **ESLint 10.5.xの採用可否**: 上表の通り非採用(9.39.5に決定)。

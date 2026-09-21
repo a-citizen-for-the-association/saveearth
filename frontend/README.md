@@ -8,7 +8,7 @@ versions.
 ## Setup
 
 ```bash
-nvm use 26   # or: install Node 26.x however you manage runtimes
+nvm use 24   # or: install Node 24.x however you manage runtimes
 pnpm install
 cp .env.example .env.local   # fill in contract addresses per chain (see contracts/README.md)
 ```
