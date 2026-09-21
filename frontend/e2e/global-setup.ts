@@ -90,7 +90,10 @@ export default async function globalSetup() {
     {
       cwd: CONTRACTS_DIR,
       env: { ...process.env, OWNER_ADDRESS: privateKeyToAccount(OWNER_PRIVATE_KEY).address },
-      stdio: "ignore",
+      // `inherit`, not `ignore`: a failure here (compile error, RPC issue,
+      // etc.) needs to be visible in the CI log — `ignore` swallowed the
+      // real forge output, leaving only "Command failed" with no reason.
+      stdio: "inherit",
     },
   );
 
