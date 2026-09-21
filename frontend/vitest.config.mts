@@ -6,6 +6,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    // e2e/ holds Playwright specs (their own `test`/`expect`, run via
+    // `pnpm e2e`), not Vitest ones — exclude them from Vitest's discovery.
+    exclude: ["node_modules/**", "e2e/**"],
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts", "hooks/**/*.ts"],

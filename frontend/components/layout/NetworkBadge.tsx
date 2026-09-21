@@ -9,6 +9,7 @@ const CHAIN_NAMES: Record<number, string> = {
   11155111: "SEPOLIA",
   420420419: "POLKADOT HUB",
   420420417: "POLKADOT HUB TESTNET",
+  31337: "LOCAL (FOUNDRY)",
 };
 
 export function NetworkBadge() {

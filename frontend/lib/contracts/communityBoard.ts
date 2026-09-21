@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import { mainnet, sepolia } from "viem/chains";
+import { foundry, mainnet, sepolia } from "viem/chains";
 import { polkadotHub, polkadotHubTestnet } from "../wagmi";
 
 // See the note in membership.ts about why these must stay static accesses.
@@ -8,6 +8,8 @@ const COMMUNITY_BOARD_ADDRESSES: Partial<Record<number, Address>> = {
   [sepolia.id]: process.env.NEXT_PUBLIC_COMMUNITY_BOARD_ADDRESS_11155111 as Address | undefined,
   [polkadotHub.id]: process.env.NEXT_PUBLIC_COMMUNITY_BOARD_ADDRESS_420420419 as Address | undefined,
   [polkadotHubTestnet.id]: process.env.NEXT_PUBLIC_COMMUNITY_BOARD_ADDRESS_420420417 as Address | undefined,
+  // Local Anvil, set only by e2e/global-setup.ts — never in a real .env file.
+  [foundry.id]: process.env.NEXT_PUBLIC_COMMUNITY_BOARD_ADDRESS_31337 as Address | undefined,
 };
 
 /** Undefined means "no CommunityBoard deployment configured for this chain yet". */
