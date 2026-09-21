@@ -13,7 +13,7 @@ type ChatRoom = { label: string; url: string; active: boolean };
 
 export function CommsChannelList() {
   const { chainId, communityBoard, isConfigured } = useSaveEarthContracts();
-  const { isOwner } = useMembershipStatus();
+  const { isOwner, canManageCommunityBoard } = useMembershipStatus();
 
   const { entries, refetch } = useActiveEntries<ChatRoom>(
     communityBoard,
@@ -43,7 +43,7 @@ export function CommsChannelList() {
             <a href={value.url} target="_blank" rel="noreferrer" className={styles.url}>
               {value.url}
             </a>
-            {isOwner && (
+            {canManageCommunityBoard && (
               <button
                 type="button"
                 className={sharedStyles.btn}
@@ -66,7 +66,12 @@ export function CommsChannelList() {
       ) : (
         <p className={sharedStyles.mutedText}>No rooms yet.</p>
       )}
-      {isOwner && <CommsChannelForm onSuccess={refetch} />}
+      {canManageCommunityBoard && <CommsChannelForm onSuccess={refetch} />}
+      {isOwner && !canManageCommunityBoard && (
+        <p className={sharedStyles.mutedText}>
+          You are the Owner but not currently a member — rejoin to manage channels.
+        </p>
+      )}
     </div>
   );
 }

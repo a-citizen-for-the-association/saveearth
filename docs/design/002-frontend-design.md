@@ -20,7 +20,7 @@ Next.js(App Router)でウォレット接続とコントラクト読み書きを�
 | サーバー状態 | TanStack Query(wagmi内蔵) | コントラクト読み取り結果のキャッシュ・再取得 |
 | スタイリング | CSS Modules(素のCSS) | Tailwindは使用しない。ピクセル単位で作り込むレトロUIとユーティリティクラスの相性が悪いため |
 | フォント | `next/font/google`(Press Start 2P, VT323) | セルフホスティングにより外部リクエストとCSP設定をシンプルに保つ |
-| コントラクトアクセス制御 | OpenZeppelin `Ownable`のオンチェーン状態を`isOwner`判定に利用 | フロントエンドは`owner()`を読み取ってUIの出し分けを行う |
+| コントラクトアクセス制御 | OpenZeppelin `Ownable`のオンチェーン状態を`isOwner`判定に利用 | フロントエンドは`owner()`を読み取ってUIの出し分けを行う。CommunityBoardの管理系操作は`isOwner && isMember`(ADR-0005)で判定する |
 
 実装時にはバージョンを確定し`package.json`にロックする(`software-policy`の方針に従い、実装着手時点での最新安定版を採用する)。
 
@@ -38,8 +38,8 @@ app/
 画面上のセクション構成(デザイン案参照):
 
 1. ヘッダー: ロゴ、ネットワークバッジ、ウォレット接続ボタン/接続済みアドレス表示、Owner時は "★ HOST ★" バッジ
-2. MISSION LOG: 理念・目標メッセージの一覧(複数)。Owner時のみ追加・削除フォームを表示
-3. COMMS CHANNELS: チャットルームURLの一覧(複数)。Owner時のみ追加・削除フォームを表示
+2. MISSION LOG: 理念・目標メッセージの一覧(複数)。Ownerかつメンバーである間のみ追加・削除フォームを表示(ADR-0005)。Ownerだがメンバーでない場合はその旨を表示する
+3. COMMS CHANNELS: チャットルームURLの一覧(複数)。Ownerかつメンバーである間のみ追加・削除フォームを表示(ADR-0005)。Ownerだがメンバーでない場合はその旨を表示する
 4. PARTY ROSTER: メンバー一覧(アドレス・追加者・件数)。メンバー時のみ「新規メンバー追加」フォーム、本人の行にのみ「脱退」ボタンを表示
 
 ## 4. コンポーネント構成
@@ -52,17 +52,17 @@ components/
 │   └── NetworkBadge.tsx
 ├── mission/
 │   ├── MissionLog.tsx
-│   └── MissionForm.tsx        # Owner専用
+│   └── MissionForm.tsx        # Owner かつ メンバー専用(ADR-0005)
 ├── comms/
 │   ├── CommsChannelList.tsx
-│   └── CommsChannelForm.tsx   # Owner専用
+│   └── CommsChannelForm.tsx   # Owner かつ メンバー専用(ADR-0005)
 └── membership/
     ├── PartyRoster.tsx
     ├── AddMemberForm.tsx      # メンバー専用
     └── LeaveButton.tsx        # 本人のみ
 ```
 
-`Owner専用`/`メンバー専用`のコンポーネントは、対応する権限を持たないアカウントの場合はそもそもレンダリングしない(操作できないボタンをグレー表示するのではなく、非表示にする)。
+`Owner専用`/`メンバー専用`のコンポーネントは、対応する権限を持たないアカウントの場合はそもそもレンダリングしない(操作できないボタンをグレー表示するのではなく、非表示にする)。ただし「Ownerではあるがメンバーでない」場合に限っては、単に非表示にするのではなく理由を短く表示する(`hooks/useMembershipStatus.ts`の`canManageCommunityBoard`)。
 
 ## 5. 状態管理
 

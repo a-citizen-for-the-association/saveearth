@@ -33,6 +33,10 @@ export function useMembershipStatus() {
   return {
     isOwner,
     isMember,
+    // CommunityBoard.onlyOwnerWhoIsMember (ADR-0005) requires both: being
+    // Owner alone is not enough to add/remove chat rooms or messages.
+    // Components gating those controls must check this, not `isOwner`.
+    canManageCommunityBoard: isOwner && isMember,
     isLoading: ownerQuery.isLoading || isMemberQuery.isLoading,
   };
 }

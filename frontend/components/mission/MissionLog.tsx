@@ -12,7 +12,7 @@ type Message = { content: string; active: boolean };
 
 export function MissionLog() {
   const { chainId, communityBoard, isConfigured } = useSaveEarthContracts();
-  const { isOwner } = useMembershipStatus();
+  const { isOwner, canManageCommunityBoard } = useMembershipStatus();
 
   const { entries, refetch } = useActiveEntries<Message>(
     communityBoard,
@@ -40,7 +40,7 @@ export function MissionLog() {
           <p key={id} style={{ display: "flex", gap: "0.5rem" }}>
             <span className={sharedStyles.mutedText}>&gt;</span>
             <span style={{ flex: 1 }}>{value.content}</span>
-            {isOwner && (
+            {canManageCommunityBoard && (
               <button
                 type="button"
                 className={sharedStyles.btn}
@@ -63,7 +63,12 @@ export function MissionLog() {
       ) : (
         <p className={sharedStyles.mutedText}>No messages yet.</p>
       )}
-      {isOwner && <MissionForm onSuccess={refetch} />}
+      {canManageCommunityBoard && <MissionForm onSuccess={refetch} />}
+      {isOwner && !canManageCommunityBoard && (
+        <p className={sharedStyles.mutedText}>
+          You are the Owner but not currently a member — rejoin to manage the mission log.
+        </p>
+      )}
     </div>
   );
 }
