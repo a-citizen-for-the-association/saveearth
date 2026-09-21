@@ -132,6 +132,7 @@ event MessageRemoved(uint256 indexed id);
 - ETHやトークンの送受金ロジックを持たないため、reentrancy(再入)のリスクは低い。
 - 入力値検証: `addMember`はゼロアドレス・重複登録をrevert、`addChatRoom`/`addMessage`は空文字列の扱いを実装時に決定する(空文字列を許可するか、`require(bytes(x).length > 0)`で弾くか)。
 - Owner権限の乗っ取り対策として、将来のCouncil移行時は `transferOwnership` の宛先をマルチシグ(例: Safe)にすることを強く推奨する([ADR-0004](../adr/0004-ownable-governance-model.md))。
+- **`renounceOwnership()`は両コントラクトともオーバーライドしてrevertさせ、無効化する**(セキュリティレビューで指摘)。非アップグレード契約でOwnerが`address(0)`になると、`CommunityBoard`の全操作が永久に不能になり、`Membership`のOwner経由削除・将来の`transferOwnership`によるCouncil移行経路も塞がれてしまうため。
 
 ## 7. テスト方針
 
