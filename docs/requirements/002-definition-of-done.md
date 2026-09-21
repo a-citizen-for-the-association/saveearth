@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Approved(2026-09-21時点(2回目)の達成状況は[テスト結果レポート](../reports/2026-09-21-1-test-results.md)を参照。**フロントエンドのテスト(2.3)は達成。CI(2.5)はワークフロー作成済みで実際のグリーン実行確認待ち**)
+- ステータス: Approved(2026-09-21時点で全項目達成。[テスト結果レポート](../reports/2026-09-21-1-test-results.md)参照。CI(2.5)は実際のGitHub Actions上でグリーンになったことを確認済み)
 - 関連: [要件定義 001](./001-mvp-requirements.md) / [コントラクト基本設計書](../design/001-contract-design.md) / [フロントエンド基本設計書](../design/002-frontend-design.md)
 
 ## 1. 目的
@@ -36,11 +36,12 @@
 
 - [x] フロントエンドが `next build` によるコンパイルに成功する(2026-09-21時点でローカル確認済み)。**Vercelへの実際のデプロイはまだ行っていない**(ビルド成功をもって「デプロイできる状態」とみなしている)。
 
-### 2.5 全体 [CIの実行確認待ち]
+### 2.5 全体
 
-- [ ] コントラクト・フロントエンド双方のテストがCI上で green であること。`.github/workflows/ci.yml`を作成し(`contracts`/`frontend-checks`/`frontend-e2e`の3ジョブ、いずれも`forge coverage`・Vitestカバレッジ80%閾値・E2E全件を含む)、各ステップに対応するコマンドはすべてローカルで成功することを確認済み。**ただし実際のGitHub Actions上でグリーンになったことはまだ確認していない**(リモートへのpushが必要なため、ユーザーの承認を得てから実施する)。
-- [x] Lint・フォーマットチェック(Solidity: `forge fmt --check` / `forge lint`、フロントエンド: ESLint / Prettier)がエラーなしであること(2026-09-21時点でローカル実行にて確認済み。CI上での自動実行はワークフロー作成済み・実行確認待ち)
-- [x] 型チェック(TypeScript: `tsc --noEmit`)がエラーなしであること(2026-09-21時点でローカル確認済み)
+- [x] コントラクト・フロントエンド双方のテストがCI上で green であること。`.github/workflows/ci.yml`(`contracts`/`frontend-checks`/`frontend-e2e`の3ジョブ、いずれも`forge coverage`・Vitestカバレッジ80%閾値・E2E全件を含む)を実際にGitHub Actions上で実行し、2026-09-21時点で3ジョブとも成功(グリーン)を確認済み。
+  - 初回実行で2件の不具合が判明し修正済み: (1) `tsc --noEmit`単体ではNext.jsが`.next/types/`に生成する`LayoutProps`等のアンビエント型を解決できず失敗する問題(`typecheck`スクリプトに`next typegen`を追加)。(2) E2Eの`getByText`が大文字小文字を無視した部分一致のため、意図しない要素と衝突しstrict-mode違反になっていた問題(該当箇所を`exact: true`に修正)。いずれもローカル環境に残っていた副産物(過去の`next build`実行で生成された`.next/types`、たまたま衝突しなかったタイミング)によりローカルでは検出できず、クリーンなCI環境で初めて顕在化した。
+- [x] Lint・フォーマットチェック(Solidity: `forge fmt --check` / `forge lint`、フロントエンド: ESLint / Prettier)がエラーなしであること(2026-09-21時点でローカルおよびCI上の両方で確認済み)
+- [x] 型チェック(TypeScript: `tsc --noEmit`)がエラーなしであること(2026-09-21時点でローカルおよびCI上の両方で確認済み)
 
 ## 3. なぜフロントエンドは「行カバレッジ100%」にしないのか
 
