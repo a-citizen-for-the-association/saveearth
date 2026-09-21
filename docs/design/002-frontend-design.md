@@ -81,8 +81,9 @@ components/
 lib/
 ├── contracts/
 │   ├── membership.ts       # ABI + チェーンごとのアドレス + 型付きフック
-│   └── communityBoard.ts
-└── wagmi.ts                 # wagmi config(4チェーン定義、コネクタ設定)
+│   ├── communityBoard.ts   # governanceToken()ゲッター含む(ADR-0006)
+│   └── governanceToken.ts  # 最小限のERC20 ABI(name/symbol/decimals/totalSupplyのみ、読み取り専用)
+└── wagmi.ts                 # wagmi config(4チェーン定義、コネクタ設定、blockExplorerUrl()ヘルパー)
 ```
 
 - チェーンごとのコントラクトアドレスは環境変数(`NEXT_PUBLIC_MEMBERSHIP_ADDRESS_<chainId>`等)で注入する。Next.jsは`process.env.NEXT_PUBLIC_*`をビルド時に静的置換するため、動的なキー組み立て(`process.env[computed]`)ではなく、チェーンごとに固定のプロパティアクセスを列挙する必要がある(`lib/contracts/membership.ts`参照)。未設定チェーンでは機能を無効化し、「未デプロイ」の表示にする。

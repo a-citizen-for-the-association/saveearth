@@ -5,9 +5,11 @@ import { Test } from "forge-std/Test.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { CommunityBoard } from "../src/CommunityBoard.sol";
 import { Membership } from "../src/Membership.sol";
+import { GovernanceToken } from "../src/GovernanceToken.sol";
 
 contract CommunityBoardTest is Test {
     Membership private membership;
+    GovernanceToken private token;
     CommunityBoard private board;
 
     address private owner = makeAddr("owner");
@@ -17,7 +19,8 @@ contract CommunityBoardTest is Test {
         // Membership's constructor registers `owner` as its genesis member,
         // so `owner` satisfies `onlyOwnerWhoIsMember` (ADR-0005) by default.
         membership = new Membership(owner);
-        board = new CommunityBoard(owner, address(membership));
+        token = new GovernanceToken(owner);
+        board = new CommunityBoard(owner, address(membership), address(token));
     }
 
     function test_constructor_setsOwnable() public view {
@@ -28,15 +31,57 @@ contract CommunityBoardTest is Test {
         assertEq(address(board.membership()), address(membership));
     }
 
+    function test_constructor_setsGovernanceToken() public view {
+        assertEq(board.governanceToken(), address(token));
+    }
+
     function test_constructor_revertsOnEoaMembershipAddress() public {
         address eoa = makeAddr("not-a-contract");
         vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidMembership.selector, eoa));
-        new CommunityBoard(owner, eoa);
+        new CommunityBoard(owner, eoa, address(token));
     }
 
     function test_constructor_revertsOnZeroAddressMembership() public {
         vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidMembership.selector, address(0)));
-        new CommunityBoard(owner, address(0));
+        new CommunityBoard(owner, address(0), address(token));
+    }
+
+    function test_constructor_revertsOnEoaGovernanceTokenAddress() public {
+        address eoa = makeAddr("not-a-contract-2");
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidGovernanceToken.selector, eoa));
+        new CommunityBoard(owner, address(membership), eoa);
+    }
+
+    function test_constructor_revertsOnZeroAddressGovernanceToken() public {
+        vm.expectRevert(abi.encodeWithSelector(CommunityBoard.InvalidGovernanceToken.selector, address(0)));
+        new CommunityBoard(owner, address(membership), address(0));
+    }
+
+    function test_constructor_revertsWhenMembershipAndGovernanceTokenAreTheSameAddress() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(CommunityBoard.MembershipAndGovernanceTokenMustDiffer.selector, address(membership))
+        );
+        new CommunityBoard(owner, address(membership), address(membership));
+    }
+
+    function test_adminFunctions_neverCallGovernanceToken() public {
+        // CommunityBoard's docstring/ADR-0006 claim `governanceToken` is a
+        // pure marker with no function calls made on it. Prove it: wire up
+        // a "hostile" governance token whose fallback always reverts, and
+        // confirm every admin action still succeeds.
+        RevertingFallback hostileToken = new RevertingFallback();
+        Membership freshMembership = new Membership(owner);
+        CommunityBoard freshBoard = new CommunityBoard(owner, address(freshMembership), address(hostileToken));
+
+        vm.startPrank(owner);
+        uint256 roomId = freshBoard.addChatRoom("General", "https://discord.gg/saveearth");
+        freshBoard.removeChatRoom(roomId);
+        uint256 messageId = freshBoard.addMessage("Climate action starts with us.");
+        freshBoard.removeMessage(messageId);
+        vm.stopPrank();
+
+        assertFalse(freshBoard.getChatRoom(roomId).active);
+        assertFalse(freshBoard.getMessage(messageId).active);
     }
 
     function test_addChatRoom_afterTransferOwnershipToNonMemberReverts() public {
@@ -318,5 +363,13 @@ contract CommunityBoardTest is Test {
     function test_getActiveMessages_emptyWhenNoneAdded() public view {
         CommunityBoard.Message[] memory active = board.getActiveMessages();
         assertEq(active.length, 0);
+    }
+}
+
+/// @dev Minimal contract that reverts on any call, used to prove
+/// CommunityBoard never actually calls its `governanceToken` reference.
+contract RevertingFallback {
+    fallback() external payable {
+        revert("RevertingFallback: no calls allowed");
     }
 }

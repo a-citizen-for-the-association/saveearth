@@ -23,6 +23,9 @@ contract CommunityBoard is Ownable {
     }
 
     IMembership public immutable membership;
+    /// @dev The official SaveEarth GovernanceToken address (ADR-0006). Purely
+    ///      a marker — no function on it is ever called from this contract.
+    address public immutable governanceToken;
 
     mapping(uint256 => ChatRoom) private chatRooms;
     uint256 public chatRoomCount;
@@ -40,16 +43,33 @@ contract CommunityBoard is Ownable {
     error AlreadyRemoved(uint256 id);
     error OwnerNotAMember(address owner);
     error InvalidMembership(address membershipAddress);
+    error InvalidGovernanceToken(address governanceTokenAddress);
+    error MembershipAndGovernanceTokenMustDiffer(address value);
 
-    constructor(address initialOwner, address membershipAddress) Ownable(initialOwner) {
-        // Can't verify `membershipAddress` actually implements IMembership
-        // correctly (that's the accepted deploy-time trust boundary,
-        // ADR-0005) — but since `membership` is immutable, catching a
-        // plain wrong-address mistake (EOA, address(0), typo) here turns a
-        // silent brick into an immediate deploy-time revert instead of a
-        // surprise on the first admin call.
+    constructor(address initialOwner, address membershipAddress, address governanceTokenAddress) Ownable(initialOwner) {
+        // Can't verify `membershipAddress`/`governanceTokenAddress` actually
+        // implement what they claim to (that's the accepted deploy-time
+        // trust boundary, ADR-0005/ADR-0006) — but since both are immutable,
+        // catching a plain wrong-address mistake (EOA, address(0), typo)
+        // here turns a silent brick into an immediate deploy-time revert
+        // instead of a surprise on first use.
         if (membershipAddress.code.length == 0) revert InvalidMembership(membershipAddress);
+        if (governanceTokenAddress.code.length == 0) {
+            revert InvalidGovernanceToken(governanceTokenAddress);
+        }
+        // Both checks above only prove "has code" — they can't tell the two
+        // arguments apart, so a deployer who transposes them (e.g. passes
+        // GovernanceToken where Membership belongs) would sail through both
+        // checks and brick every admin function behind onlyOwnerWhoIsMember
+        // (immutably, no recovery short of redeploy). This at least catches
+        // the degenerate case of passing the same address for both; a full
+        // swap between two distinct real contracts can't be caught without
+        // a semantic check, which is out of scope (ADR-0005/ADR-0006).
+        if (membershipAddress == governanceTokenAddress) {
+            revert MembershipAndGovernanceTokenMustDiffer(membershipAddress);
+        }
         membership = IMembership(membershipAddress);
+        governanceToken = governanceTokenAddress;
     }
 
     /// @dev Owner-only, same as `onlyOwner`, plus: the Owner must currently be

@@ -1,6 +1,6 @@
 # SaveEarth Contracts
 
-Foundry project for `Membership.sol` / `CommunityBoard.sol`. See
+Foundry project for `Membership.sol` / `GovernanceToken.sol` / `CommunityBoard.sol`. See
 [`docs/design/001-contract-design.md`](../docs/design/001-contract-design.md) for the design and
 [`docs/adr/`](../docs/adr/) for the technology decisions this project follows.
 

@@ -21,6 +21,7 @@ export const communityBoardAbi = [
     inputs: [
       { name: "initialOwner", type: "address", internalType: "address" },
       { name: "membershipAddress", type: "address", internalType: "address" },
+      { name: "governanceTokenAddress", type: "address", internalType: "address" },
     ],
     stateMutability: "nonpayable",
   },
@@ -141,6 +142,13 @@ export const communityBoardAbi = [
   },
   {
     type: "function",
+    name: "governanceToken",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "removeChatRoom",
     inputs: [{ name: "id", type: "uint256", internalType: "uint256" }],
     outputs: [],
@@ -232,5 +240,15 @@ export const communityBoardAbi = [
     type: "error",
     name: "OwnerNotAMember",
     inputs: [{ name: "owner", type: "address", internalType: "address" }],
+  },
+  {
+    type: "error",
+    name: "InvalidGovernanceToken",
+    inputs: [{ name: "governanceTokenAddress", type: "address", internalType: "address" }],
+  },
+  {
+    type: "error",
+    name: "InvalidMembership",
+    inputs: [{ name: "membershipAddress", type: "address", internalType: "address" }],
   },
 ] as const;

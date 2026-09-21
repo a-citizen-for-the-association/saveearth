@@ -141,7 +141,7 @@ uint256 public messageCount;
 
 | 関数 | 呼び出し可能者 | 概要 |
 |---|---|---|
-| `constructor(address initialOwner, address membershipAddress, address governanceTokenAddress)` | デプロイ者 | `membership`・`governanceToken`を設定(ADR-0005・ADR-0006)。両アドレスともコードを持たないアドレス(EOA・`address(0)`等)を渡すとそれぞれ`InvalidMembership`・`InvalidGovernanceToken`でrevertする(誤ったアドレスでのデプロイをその場で検知するため。正しい実装であることまでは保証しない) |
+| `constructor(address initialOwner, address membershipAddress, address governanceTokenAddress)` | デプロイ者 | `membership`・`governanceToken`を設定(ADR-0005・ADR-0006)。両アドレスともコードを持たないアドレス(EOA・`address(0)`等)を渡すとそれぞれ`InvalidMembership`・`InvalidGovernanceToken`でrevertする(誤ったアドレスでのデプロイをその場で検知するため。正しい実装であることまでは保証しない)。また、両アドレスが同一の場合は`MembershipAndGovernanceTokenMustDiffer`でrevertする(セキュリティレビューで指摘: 2つの「コードを持つか」チェックだけでは`membershipAddress`と`governanceTokenAddress`の取り違えを検知できないため、せめて同一アドレス指定という退化ケースだけは弾く。異なる2つの正当なコントラクト同士の取り違えまでは検知できない点は既知の限界として残す) |
 | `addChatRoom(string label, string url) returns (uint256 id)` | Owner **かつ** `membership`上で現在もメンバーであること | 複数登録可能(要件4.4)。Ownerがメンバーでなくなっている場合は`OwnerNotAMember`でrevert |
 | `removeChatRoom(uint256 id)` | 同上 | `active = false` にする論理削除 |
 | `addMessage(string content) returns (uint256 id)` | 同上 | 複数登録可能(要件4.5) |
@@ -162,6 +162,7 @@ event MessageRemoved(uint256 indexed id);
 error OwnerNotAMember(address owner);
 error InvalidMembership(address membershipAddress);
 error InvalidGovernanceToken(address governanceTokenAddress);
+error MembershipAndGovernanceTokenMustDiffer(address value);
 ```
 
 ### 4.4 [設計メモ] 一覧取得のガスコスト
@@ -204,7 +205,9 @@ error InvalidGovernanceToken(address governanceTokenAddress);
   - `membershipAddress`/`governanceTokenAddress`にコードを持たないアドレス(EOA・`address(0)`)を渡すとデプロイ時にそれぞれ`InvalidMembership`・`InvalidGovernanceToken`でrevertすること
   - `transferOwnership`後、新Ownerがメンバーでなければ`OwnerNotAMember`でrevertし、メンバーであれば操作できること(セキュリティレビューで指摘)
   - デプロイ直後にOwnerがメンバー#1として登録されていること(要件7.1)
-  - `GovernanceToken`: デプロイ直後に`initialHolder`の残高が`INITIAL_SUPPLY`(1兆トークン)と一致すること、`totalSupply()`が`INITIAL_SUPPLY`と一致すること、名称・シンボルが`SaveEarth Governance Token`/`SEG`であること
+  - `GovernanceToken`: デプロイ直後に`initialHolder`の残高が`INITIAL_SUPPLY`(1兆トークン)と一致すること、`totalSupply()`が`INITIAL_SUPPLY`と一致すること、名称・シンボルが`SaveEarth Governance Token`/`SEG`であること、`mint`/`burn`相当のセレクタを直接呼び出しても解決できない(関数が存在しない)こと
+  - `membershipAddress`と`governanceTokenAddress`に同一アドレスを渡すと`MembershipAndGovernanceTokenMustDiffer`でrevertすること
+  - `governanceToken`に対して`CommunityBoard`が実際に一切関数呼び出しを行わないこと(呼び出すと必ずrevertする「敵対的」なトークンを渡しても、`addChatRoom`等の管理操作が正常に完了することで確認する)
 - 本番デプロイ前に、Anvilだけでなく実際のTestnet(Sepolia / Polkadot Hub Testnet)に対しても動作確認を行う([ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md)の注記事項)。
 - `forge coverage`の100%要件は`src/`配下のコントラクトを対象とする。`script/Deploy.s.sol`はデプロイスクリプトであり、実際のデプロイ(dry-run含む)で動作確認するものであってユニットテスト対象ではないため、`--no-match-coverage "script/"`で除外して集計する。
 

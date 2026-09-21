@@ -33,6 +33,10 @@ export const supportedChains = [mainnet, sepolia, polkadotHub, polkadotHubTestne
 
 export type SupportedChainId = (typeof supportedChains)[number]["id"];
 
+export function blockExplorerUrl(chainId: number): string | undefined {
+  return supportedChains.find((chain) => chain.id === chainId)?.blockExplorers?.default.url;
+}
+
 export const wagmiConfig = createConfig({
   chains: supportedChains,
   connectors: [injected()],

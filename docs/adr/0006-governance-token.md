@@ -79,6 +79,7 @@ constructor(address initialOwner, address membershipAddress, address governanceT
 - デプロイスクリプト(`script/Deploy.s.sol`)に`GovernanceToken`のデプロイ手順を追加する。
 - フロントエンドは`CommunityBoard.governanceToken()`を読み取り、ガバナンストークンのコントラクトアドレスを表示する(画面サンプルは別途提示)。
 - 供給量の全量が単一のアドレス(Owner)に集中する。将来のDAO化時にどう分配するかは別途検討が必要(今回のスコープ外)。
+- セキュリティレビューの指摘を受け、`membershipAddress`と`governanceTokenAddress`に同一アドレスが渡された場合は`MembershipAndGovernanceTokenMustDiffer`でrevertするようにした。両者とも「コードを持つか」だけを検証しているため、2つの引数を取り違えても検知できないという限界があり、せめて同一アドレス指定という退化ケースだけは弾く対応。異なる2つの正当なコントラクト同士が入れ替わるケースまでは検知できない(デプロイスクリプトが正しい順序で渡す前提の、既知の残存リスクとして記録)。
 
 ## 決定事項(2026-09-21確認済み)
 
