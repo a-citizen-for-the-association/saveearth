@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import { useGovernanceToken } from "../../hooks/useGovernanceToken";
+import { truncateAddress } from "../../lib/format";
 import sharedStyles from "../shared.module.css";
 import styles from "./GovernanceTokenPanel.module.css";
-
-function truncate(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
 
 export function GovernanceTokenPanel() {
   const { address, name, symbol, explorerUrl, isConfigured } = useGovernanceToken();
@@ -39,7 +36,7 @@ export function GovernanceTokenPanel() {
         {symbol && <span className={styles.symbol}>{symbol}</span>}
       </div>
       <div className={styles.addressRow}>
-        <span className={styles.address}>{truncate(address)}</span>
+        <span className={styles.address}>{truncateAddress(address)}</span>
         <button
           type="button"
           className={sharedStyles.btn}

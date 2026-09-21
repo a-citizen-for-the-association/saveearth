@@ -9,7 +9,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,css,json}\" --ignore-path .gitignore",
-    "format:check": "prettier --check \"**/*.{ts,tsx,css,json}\" --ignore-path .gitignore"
+    "format:check": "prettier --check \"**/*.{ts,tsx,css,json}\" --ignore-path .gitignore",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test"
   },
   "engines": {
     "node": "26.x"
@@ -23,13 +26,19 @@
     "wagmi": "^3.7.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
     "@types/node": "^26.6.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitest/coverage-v8": "5.0.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.5",
+    "jsdom": "30.1.0",
     "prettier": "3.9.8",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "5.0.1"
   },
   "packageManager": "pnpm@12.5.1"
 }

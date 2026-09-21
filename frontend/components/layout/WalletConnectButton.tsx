@@ -1,11 +1,8 @@
 "use client";
 
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { truncateAddress } from "../../lib/format";
 import sharedStyles from "../shared.module.css";
-
-function truncate(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
 
 export function WalletConnectButton() {
   const { address, isConnected } = useAccount();
@@ -15,7 +12,7 @@ export function WalletConnectButton() {
   if (isConnected && address) {
     return (
       <div>
-        <span>{truncate(address)}</span>{" "}
+        <span>{truncateAddress(address)}</span>{" "}
         <button type="button" className={sharedStyles.btn} onClick={() => disconnect()}>
           DISCONNECT
         </button>

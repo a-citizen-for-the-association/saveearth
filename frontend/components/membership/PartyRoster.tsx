@@ -4,14 +4,11 @@ import { useAccount } from "wagmi";
 import { useMemberRoster } from "../../hooks/useMemberRoster";
 import { useMembershipStatus } from "../../hooks/useMembershipStatus";
 import { useSaveEarthContracts } from "../../hooks/useSaveEarthContracts";
+import { truncateAddress } from "../../lib/format";
 import sharedStyles from "../shared.module.css";
 import { AddMemberForm } from "./AddMemberForm";
 import { LeaveButton } from "./LeaveButton";
 import styles from "./PartyRoster.module.css";
-
-function truncate(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -41,11 +38,11 @@ export function PartyRoster() {
           const via =
             entry.addedBy.toLowerCase() === ZERO_ADDRESS
               ? "GENESIS"
-              : `JOINED VIA ${truncate(entry.addedBy)}`;
+              : `JOINED VIA ${truncateAddress(entry.addedBy)}`;
           return (
             <div key={entry.address} className={styles.member}>
               <span className={`${styles.avatar} ${isYou ? styles.avatarYou : ""}`} />
-              <span className={styles.address}>{truncate(entry.address)}</span>
+              <span className={styles.address}>{truncateAddress(entry.address)}</span>
               <span className={styles.via}>{isYou ? `${via} / YOU` : via}</span>
               {isYou && <LeaveButton address={entry.address} onSuccess={refetch} />}
             </div>
