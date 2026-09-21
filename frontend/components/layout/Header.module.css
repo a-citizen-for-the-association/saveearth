@@ -1,0 +1,36 @@
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mark {
+  font-family: var(--font-display), monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.tag {
+  font-family: var(--font-display), monospace;
+  font-size: 0.55rem;
+  background: var(--g0);
+  color: var(--g3);
+  padding: 0.3rem 0.45rem;
+  display: inline-block;
+  margin-top: 0.6rem;
+}
+
+.player {
+  text-align: right;
+  font-size: 1rem;
+}
+
+.role {
+  font-family: var(--font-display), monospace;
+  font-size: 0.55rem;
+  color: var(--g1);
+  display: block;
+  margin-top: 0.3rem;
+}

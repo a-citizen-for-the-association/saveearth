@@ -157,7 +157,7 @@ Sources: [Use Foundry with Polkadot Hub](https://docs.polkadot.com/smart-contrac
 - [x] 本番運用(Mainnet)でEthereumとPolkadot Hubのどちらを選ぶか → 要件定義のスコープ外。デプロイ時に運用判断として決定する(3.3)。
 - [x] メンバー追加に必要な人数 → 既存メンバー1名が単独で追加可能。他メンバーの承認は不要(4.1・5章)。
 - [x] チャットルームURL・理念メッセージは1件のみ保持か、複数保持か → 複数保持する(4.4・4.5)。
-- [ ] Polkadot Hub Testnetの正式名称・RPCエンドポイント・Chain IDの確定(実装時にFoundry組み込みの`polkadot-testnet`設定を利用予定。設計フェーズで確定)。
+- [x] Polkadot Hub Testnet/Mainnetの正式名称・RPCエンドポイント・Chain ID → docs.polkadot.comで確認済み。Testnet: Chain ID `420420417`・通貨`PAS`。Mainnet: Chain ID `420420419`・通貨`DOT`。詳細は[ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md)・[003-software-versions.md](../design/003-software-versions.md)参照。
 
 現時点で実装をブロックするOpen Questionはない。
 

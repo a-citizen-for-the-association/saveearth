@@ -1,0 +1,73 @@
+.panel {
+  border: 4px solid var(--g0);
+  background: var(--g3);
+  box-shadow: 5px 5px 0 var(--g0);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.heading {
+  font-family: var(--font-display), monospace;
+  font-size: 0.68rem;
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--g0);
+}
+
+.btn {
+  font-family: var(--font-display), monospace;
+  font-size: 0.62rem;
+  padding: 0.6rem 0.8rem;
+  border: 3px solid var(--g0);
+  background: var(--g0);
+  color: var(--g3);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--g1);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--g1);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+  transform: none;
+}
+
+.textInput {
+  flex: 1;
+  font-family: var(--font-body), monospace;
+  font-size: 1.05rem;
+  padding: 0.4rem 0.6rem;
+  border: 3px solid var(--g0);
+  background: var(--g3);
+  color: var(--g0);
+}
+
+.textInput::placeholder {
+  color: var(--g1);
+  opacity: 0.8;
+}
+
+.form {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.errorText {
+  color: var(--g0);
+  background: var(--g2);
+  border: 2px solid var(--g0);
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.6rem;
+  font-size: 1rem;
+}
+
+.mutedText {
+  color: var(--g1);
+}

@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Draft(確認待ち)
+- ステータス: Approved(フロントエンド実装時に確定した内容を反映済み)
 - 関連: [コントラクト基本設計書](./001-contract-design.md) / [フロントエンド基本設計書](./002-frontend-design.md) / [ADR-0003](../adr/0003-use-foundry-with-revm-backend-for-polkadot-hub.md) / [ADR-0004](../adr/0004-ownable-governance-model.md)
 
 `software-policy`(安定版を優先し、最新リリースから順に採用可否を判断する)に従い、2026-09-21時点で公式リリースページ・npmを調査した結果。**実装着手時に再度バージョンを確認し、`package.json` / `foundry.toml` にロックすること**(日数が経つと新しいリリースが出ている可能性があるため)。
@@ -35,21 +35,22 @@ Foundry自体はPolkadot Hub(EVM/REVM)向けのチェーン設定(`--chain polka
 | パッケージマネージャ | **pnpm 12.5.1** | Stable | 2026-08にTypeScript実装からRust実装への全面書き換え(v12)を実施したばかりのため、導入時にプロジェクトの主要コマンド(install/build)が問題なく動くことを確認すること(3章参照) |
 | Next.js | **16.3.x** | Stable | App Router。Pages Routerは使用しない |
 | React / React DOM | **19.2.x**(Next.js 16.3の要求に合わせる) | Stable | Next.js側のpeer dependencyに従う |
-| TypeScript | **7.0.x**(要検証) または **5.x最新** | Stable(7.0はリリース直後) | 9章参照。Go製ネイティブコンパイラへの全面書き換えで、リリース直後のためエコシステム互換性を要確認 |
-| wagmi | **3.7.x** | Stable | React用Web3フック。v2からv3への移行ガイドが公式に存在 |
-| viem | **2.56.x** | Stable | wagmiの下層ライブラリ(RPC/ABIエンコード) |
-| TanStack Query | wagmiの要求バージョンに追従(v5系) | Stable | wagmiに内蔵、個別インストール不要 |
-| ESLint | **10.5.x** | Stable | v9系は2026-08にEOL。`eslint-config-next`(16.3.x、採用中のNext.jsと同一バージョン)を利用 |
-| Prettier | **3.9.x** | Stable | フォーマッター。ecc web/hooks.mdのPostToolUseフック(`prettier --write`)にそのまま利用する |
+| TypeScript | **5.9.3**(5.x系最新) | Stable | [解決済み]`create-next-app 16.3.5`自体が5.9.3をデフォルトで採用しており、エコシステム(特にESLint関連プラグイン)がまだ5.x系を前提にしていると判断し、7.0系は見送った |
+| wagmi | **3.7.7** | Stable | React用Web3フック |
+| viem | **2.56.8** | Stable | wagmiの下層ライブラリ(RPC/ABIエンコード) |
+| TanStack Query | **5.103.1** | Stable | wagmiに内蔵、個別インストール不要 |
+| ESLint | **9.39.5**(EOL版、意図的に採用) | Deprecated | [解決済み] 10.5.xを試したところ`eslint-config-next`が依存する`eslint-plugin-react`がESLint 10の内部API変更(`getFilename`)に対応しておらず、`pnpm lint`が例外で落ちた。実際に壊れたため、`create-next-app`が選定した9.39.5(動作確認済み)に戻した。`eslint-config-next`側がESLint 10対応した時点で再度アップグレードを検討する |
+| Prettier | **3.9.8** | Stable | フォーマッター |
 
 フロントエンドのLint/フォーマットは、Solidity側(Foundry組み込み)とは異なり、実績があり広く使われているESLint + Prettierの組み合わせを採用する。新しい統合ツール(Biome等)は本プロジェクトでは採用しない(`software-policy`の「実績のある広く使われているものを優先する」方針)。
 
-## 3. 導入前に確認すべき事項
+## 3. 導入時に確認した事項(結果)
 
-- [ ] **Node.js 26(Current)の採用**: 指定により採用するが、2026-09時点ではLTSではなくCurrent(LTS昇格は2026-10予定)である。Vercelのビルド環境・wagmi/viem等の依存パッケージがNode.js 26で問題なく動くことを確認する。
-- [ ] **TypeScript 7.0系の採用可否**: 2026-07リリースの新しいネイティブコンパイラ版であり、リリースから日が浅い。wagmi/viem/Next.jsの型定義や周辺ツール(ESLint等)が7.0系で問題なく動くかを`pnpm create next-app`実行時に確認し、問題があれば直近の5.x系安定版に切り替える(2章の表を参照)。
-- [ ] **pnpm 12.5.1(Rust書き換え版)の動作確認**: リリースから日が浅い大規模書き換えのため、`pnpm install`/`pnpm build`が問題なく動くかを確認する。
-- [ ] Polkadot Hub Testnet/MainnetのRPCエンドポイント・Chain IDの確定(バージョンではなくネットワーク設定。[要件定義8章](../requirements/001-mvp-requirements.md)で継続管理)
+- [x] **Node.js 26(Current)**: `nvm install 26`で導入し、`pnpm install`/`pnpm build`とも問題なく動作した。LTSではない点は変わらず留意事項として残す。
+- [x] **TypeScript 7.0系の採用可否**: 上表の通り5.9.3を採用(7.0系は見送り)。
+- [x] **pnpm 12.5.1(Rust書き換え版)**: `pnpm install`/`pnpm build`/`pnpm dev`とも問題なく動作した。
+- [x] **ESLint 10.5.xの採用可否**: 上表の通り非採用(9.39.5に決定)。
+- [x] Polkadot Hub Testnet/MainnetのRPC・Chain ID・ネイティブ通貨: docs.polkadot.com(smart-contracts/connect)で確認済み。Testnet: Chain ID `420420417`, 通貨`PAS`, RPC `https://eth-rpc-testnet.polkadot.io/`。Mainnet: Chain ID `420420419`, 通貨`DOT`, RPC `https://eth-rpc.polkadot.io/`。`frontend/lib/wagmi.ts`に反映済み。
 
 ## 4. 次のステップ
 

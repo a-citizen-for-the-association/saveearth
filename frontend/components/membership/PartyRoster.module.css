@@ -1,0 +1,31 @@
+.roster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.avatar {
+  width: 22px;
+  height: 22px;
+  background: var(--g0);
+  flex: none;
+}
+
+.avatarYou {
+  background: var(--g1);
+}
+
+.address {
+  flex: 1;
+}
+
+.via {
+  font-size: 0.95rem;
+  color: var(--g1);
+}

@@ -1,0 +1,17 @@
+.room {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 2px dotted var(--g1);
+}
+
+.room:last-of-type {
+  border-bottom: none;
+}
+
+.url {
+  color: var(--g1);
+  font-size: 1rem;
+}

@@ -1,0 +1,45 @@
+/* Game Boy 4-shade green LCD palette — a deliberately single, committed
+   visual world (retro handheld screen), not a light/dark adaptive theme. */
+:root {
+  --g0: #0f380f; /* darkest: text, borders, filled buttons */
+  --g1: #306230; /* dark: secondary text, dotted rules */
+  --g2: #8bac0f; /* mid: reserved for future use (hover fills, etc.) */
+  --g3: #9bbc0f; /* lightest: page + panel background */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--g3);
+  color: var(--g0);
+  font-family: var(--font-body), monospace;
+  font-size: 1.15rem;
+  line-height: 1.4;
+  background-image: repeating-linear-gradient(rgba(15, 56, 15, 0.06) 0 2px, transparent 2px 4px);
+}
+
+button,
+input {
+  font-family: inherit;
+  color: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--g1);
+  outline-offset: 2px;
+}
+
+img,
+svg {
+  image-rendering: pixelated;
+}

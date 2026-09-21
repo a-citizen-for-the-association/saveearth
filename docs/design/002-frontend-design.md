@@ -3,7 +3,7 @@
 - 作成日: 2026-09-21
 - 更新日: 2026-09-21
 - 作成者: A Citizen for the Association
-- ステータス: Draft
+- ステータス: Approved(初期実装完了。残るオープン事項は8章参照)
 - 関連: [要件定義 001](../requirements/001-mvp-requirements.md) / [コントラクト基本設計書 001](./001-contract-design.md) / [SaveEarth Home Screen(デザイン案)](https://claude.ai/code/artifact/6a37909a-6a4d-406e-a9d7-85808cf5b47e)
 
 ## 1. 概要
@@ -82,8 +82,9 @@ lib/
 └── wagmi.ts                 # wagmi config(4チェーン定義、コネクタ設定)
 ```
 
-- チェーンごとのコントラクトアドレスは環境変数(`NEXT_PUBLIC_MEMBERSHIP_ADDRESS_*`等)で注入し、起動時に存在検証する(未設定チェーンでは機能を無効化し、エラーメッセージを表示する)。
-- Polkadot Hub(mainnet/testnet)はwagmiの`defineChain`でカスタムチェーン定義を追加する(RPCエンドポイント・チェーンIDは実装時に確定。[要件定義 8章](../requirements/001-mvp-requirements.md)参照)。
+- チェーンごとのコントラクトアドレスは環境変数(`NEXT_PUBLIC_MEMBERSHIP_ADDRESS_<chainId>`等)で注入する。Next.jsは`process.env.NEXT_PUBLIC_*`をビルド時に静的置換するため、動的なキー組み立て(`process.env[computed]`)ではなく、チェーンごとに固定のプロパティアクセスを列挙する必要がある(`lib/contracts/membership.ts`参照)。未設定チェーンでは機能を無効化し、「未デプロイ」の表示にする。
+- Polkadot Hub(mainnet/testnet)はwagmiの`defineChain`でカスタムチェーン定義を追加する。RPC/Chain ID/ネイティブ通貨はdocs.polkadot.comで確認済み(Testnet: `420420417`/`PAS`、Mainnet: `420420419`/`DOT`。[003-software-versions.md](./003-software-versions.md)参照)。
+- `getActiveChatRooms`/`getActiveMessages`はコントラクト側でid情報を含めずactive要素だけを返すため、削除ボタンに必要な本当のオンチェーンidをそこから復元できない。フロントエンドでは代わりに`chatRoomCount`/`messageCount`から`0..count-1`の範囲で`getChatRoom(i)`/`getMessage(i)`を`useReadContracts`によるマルチコールでまとめて取得し、idを保持したまま`active`でフィルタする(`hooks/useActiveEntries.ts`)。
 
 ## 7. デプロイ
 
@@ -94,7 +95,7 @@ lib/
 ## 8. 非機能要件・オープン事項
 
 - **パフォーマンス**: JSバンドルはアプリページ想定の目安(300kb gzip以下)を上回らないよう、wagmi/viem以外の重量ライブラリ(チャート、UIキット等)を追加しない。
-- **アクセシビリティ**: Game Boy配色(前景 `#0f380f` / 背景 `#9bbc0f` 等)はコントラスト比を実装時にWCAG AA(通常テキスト4.5:1)で再検証する。フォーカス可視化は既にデザイン案で対応済み。
-- [ ] ウォレット接続UIを自前実装するか、軽量なウォレット接続ライブラリを追加するかの最終判断
-- [ ] コントラクトイベント(`MemberAdded`等)をリアルタイム購読(`watchContractEvent`)するか、書き込み成功時の手動再取得のみとするか
-- [ ] Polkadot Hub側のウォレット(MetaMask以外の対応状況)の動作確認
+- [x] **アクセシビリティ**: Game Boy配色(前景 `#0f380f` / 背景 `#9bbc0f`)のコントラスト比を計算したところ約6.0:1で、WCAG AA(通常テキスト4.5:1)を満たす。フォーカス可視化も実装済み(`globals.css`)。
+- [x] **ウォレット接続UI**: 自前実装(`WalletConnectButton.tsx`)を採用。wagmiの`injected()`コネクタのみを使い、RainbowKit等のUIキットは追加しなかった。
+- [ ] コントラクトイベント(`MemberAdded`等)をリアルタイム購読(`watchContractEvent`)するか、書き込み成功時の手動再取得のみとするか。現状は後者(`useWriteContract`の`onSuccess`で`refetch`)のみを実装済み。
+- [ ] Polkadot Hub側のウォレット(MetaMask以外の対応状況)の動作確認(未実施。実際のTestnetデプロイ後に確認する)
