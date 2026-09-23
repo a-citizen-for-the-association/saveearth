@@ -5,6 +5,7 @@ import { useMemberRoster } from "../../hooks/useMemberRoster";
 import { useMembershipStatus } from "../../hooks/useMembershipStatus";
 import { useSaveEarthContracts } from "../../hooks/useSaveEarthContracts";
 import { truncateAddress } from "../../lib/format";
+import { deriveHackChatNickname } from "../../lib/hackchatNickname";
 import { CopyButton } from "../CopyButton";
 import sharedStyles from "../shared.module.css";
 import { AddMemberForm } from "./AddMemberForm";
@@ -42,11 +43,18 @@ export function PartyRoster() {
               : `JOINED VIA ${truncateAddress(entry.addedBy)}`;
           return (
             <div key={entry.address} className={styles.member}>
-              <span className={`${styles.avatar} ${isYou ? styles.avatarYou : ""}`} />
-              <span className={styles.address}>{truncateAddress(entry.address)}</span>
-              <CopyButton value={entry.address} />
-              <span className={styles.via}>{isYou ? `${via} / YOU` : via}</span>
-              {isYou && <LeaveButton address={entry.address} onSuccess={refetch} />}
+              <div className={styles.identity}>
+                <span className={`${styles.avatar} ${isYou ? styles.avatarYou : ""}`} />
+                <span className={styles.address}>{truncateAddress(entry.address)}</span>
+                <CopyButton value={entry.address} />
+                <span className={styles.via}>{isYou ? `${via} / YOU` : via}</span>
+                {isYou && <LeaveButton address={entry.address} onSuccess={refetch} />}
+              </div>
+              <div className={styles.nickname}>
+                <span className={styles.nicknameLabel}>HACKCHAT:</span>
+                <span className={styles.nicknameValue}>{deriveHackChatNickname(entry.address)}</span>
+                <CopyButton value={deriveHackChatNickname(entry.address)} />
+              </div>
             </div>
           );
         })}

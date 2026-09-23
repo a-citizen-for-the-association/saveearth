@@ -6,6 +6,19 @@
 
 .member {
   display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px dotted var(--g1);
+}
+
+.member:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.identity {
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -29,4 +42,23 @@
 .via {
   font-size: 0.95rem;
   color: var(--g1);
+}
+
+.nickname {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-left: calc(22px + 0.6rem);
+}
+
+.nicknameLabel {
+  font-size: 0.7rem;
+  color: var(--g1);
+}
+
+.nicknameValue {
+  font-family: var(--font-body), monospace;
+  font-size: 1.05rem;
+  flex: 1;
 }
